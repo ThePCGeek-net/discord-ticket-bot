@@ -1,0 +1,30 @@
+{
+  "name": "discord-ticket-bot",
+  "version": "1.0.0",
+  "description": "a ticket bot for discord",
+  "main": "src",
+  "scripts": {
+    "release": "standard-version",
+    "start": "node .",
+    "dev": "nodemon .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com:ThePCGeek-net/discord-ticket-bot.git"
+  },
+  "author": "ThePCGeek",
+  "dependencies": {
+    "discord.js": "12.5.3",
+    "dotenv": "^16.0.2",
+    "esm": "^3.2.25",
+    "express": "^4.18.1",
+    "http": "^0.0.1-security",
+    "pg": "^8.8.0",
+    "sequelize": "^6.21.6",
+    "standard-version": "^9.5.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.19"
+  }
+}

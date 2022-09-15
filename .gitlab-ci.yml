@@ -1,0 +1,65 @@
+stages:
+  - build
+  - docker
+  - deploy
+
+#build
+prod_build:
+  image: node:16.13.1-alpine
+  tags:
+    - bbr-docker-server #tag the bbr docker runner
+  stage: build
+  only:
+    - tags
+  script:
+    - NODE_ENV=production
+    - yarn install --frozen-lockfile --check-files
+    #- yarn build
+  artifacts:
+    paths:
+    - node_modules/
+    expire_in: 1 week
+
+#docker image build and push
+docker_image_build_release:
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  tags:
+    - bbr-docker-server #tag the bbr docker runner
+  stage: docker
+  only:
+    - tags
+  script:
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    - /kaniko/executor --force --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG --cache=true
+    - /kaniko/executor --force --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CI_REGISTRY_IMAGE:latest --cache=true
+
+#replace running container with updated version
+deploy:
+  image: docker
+    #entrypoint: [""]
+  #cache: []
+  tags:
+    - bbr-docker-server #tag the bbr docker runner
+  stage: deploy
+  only:
+    - tags
+  retry: 2
+  before_script:
+    - docker info
+    - >
+      if [ "$( docker container inspect -f '{{.State.Running}}' $CI_PROJECT_NAME )" == "true" ]; then
+        docker stop $CI_PROJECT_NAME
+        docker rm $CI_PROJECT_NAME
+      elif [ "$( docker container inspect -f '{{.State.Running}}' $CI_PROJECT_NAME )" == "false" ]; then
+        docker rm $CI_PROJECT_NAME
+      fi
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker pull $CI_REGISTRY_IMAGE:latest
+  script:
+    - docker run -d --name $CI_PROJECT_NAME --restart unless-stopped
+      -e BOT_TOKEN=`echo $BOT_TOKEN | base64 -d -i`
+      -v /home/steam/bbr-log-bot:/opt/app/data
+      $CI_REGISTRY_IMAGE:latest
