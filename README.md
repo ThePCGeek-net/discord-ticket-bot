@@ -4,6 +4,10 @@ A ticket bot for discord written in nodejs using sequelize for db storage
 
 You need a db server, in my testing I used postgres
 
+this is running on discord.js v12, have yet to learn the latest implementation
+
+there is a health check endpoint built in also exposed on container port 3000 at /api/v1/health. if you pull a GET on that it will return a 200-ok status while bot is running
+
 for running locally set up a .env file in the root of the cloned repo with the following env variables:
 
 ```text
